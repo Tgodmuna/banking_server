@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const accountSchema = new Schema(
   {
     accountNumber: {
-      type: String,
+      type: Number,
       required: true,
       unique: true,
     },
