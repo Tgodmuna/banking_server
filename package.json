@@ -1,0 +1,29 @@
+{
+  "name": "banking_server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/lodash": "^4.17.13",
+    "brcypt": "^1.0.1",
+    "config": "^3.3.12",
+    "express": "^4.21.1",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "mongoose": "^8.8.2",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/joi": "^17.2.2",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.9.1"
+  }
+}
