@@ -47,19 +47,4 @@ router.post(
   })
 );
 
-//View Account Details
-router.post(
-  "/account details",
-  [authMW],
-  tryCatchMW(async (req, res) => {
-    const Acctdetails = await getUserAccountDetails(req.user);
-    //if @getUserAccountDetails() returns null, it indicates that the owner Id
-    // used to select the account is invalid or not found.
-    //in that case, it returns null.
-    if (!Acctdetails) return res.status(404).send("no such an account ");
-
-    return res.status(200).json({ message: "retrieved successfully", data: Acctdetails });
-  })
-);
-
 
