@@ -1,0 +1,22 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title>one time password</title>
+  </head>
+  <body>
+    <h1 id="otp"></h1>
+
+    <script>
+      import { OTP } from "../utils/OTPgen.js";
+      const otp = OTP(6);
+      document.getElementById("otp").innerHTML = otp;
+
+      console.log(otp);
+
+      export { otp };
+    </script>
+  </body>
+</html>
