@@ -77,6 +77,8 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
+    otp: Number,
+    otpExpiration: Number,
     securityQuestions: [
       {
         question: {
