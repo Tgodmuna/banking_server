@@ -79,6 +79,7 @@ const userSchema = new Schema(
     },
     otp: Number,
     otpExpiration: Number,
+    otpCert: String,
     securityQuestions: [
       {
         question: {
