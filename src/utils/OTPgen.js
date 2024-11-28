@@ -1,4 +1,4 @@
-export const OTPgen = function OTPgen(length) {
+module.exports = function OTPgen(length) {
   var digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
   if (typeof length !== "number" || length <= 0) {
