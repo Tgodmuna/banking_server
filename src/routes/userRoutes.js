@@ -17,7 +17,16 @@ const Joi = require("joi");
 const _ = require("lodash");
 const errorMW = require("../middleware/errorMW");
 const loginMW = require("../middleware/loginMW");
-require("dotenv").config();
+const OTPgen = require("../utils/OTPgen");
+const Account = require("../models/accountModel");
+const tokenGen = require("../utils/tokenGen");
+const { AccountGen } = require("../utils/AccountGen");
+const bcrypt = require("bcryptjs/dist/bcrypt");
+const { error } = require("console");
+const { hash } = require("crypto");
+const { send } = require("process");
+const { post, put } = require("./profileRoutes");
+const updatePasswordMW = require("../middleware/update-passwordMW");
 
 // import OTP from "../mailService/message.html";
 
@@ -30,9 +39,17 @@ router.post(
 
     if (!user) return res.status(501).send("error creating a user");
 
-    const payload = _.pick(user, ["name", "email", "_id"]);
+    const generatedAcc = AccountGen();
 
-    const token = jwt.sign(payload, process.env.secretKey, { expiresIn: "2h" });
+    //create account for the new user
+    const account = await new Account({
+      accountNumber: generatedAcc,
+      owner: user._id,
+      balance: 0,
+      isActive: true,
+    }).save();
+
+    const token = tokenGen(_.pick(user, ["name", "email", "_id"]), process.env.secretKey, "2h");
 
     //send a header with a name "x-auth-token"
     res
@@ -54,7 +71,19 @@ router.post(
           "_id",
           "securityQuestions",
         ]),
+        accountDetails: account,
       });
+
+    //send user an email with the new account details
+    await sendEmail(
+      user.email,
+      "ACCOUNT DETAILS",
+      `dear user, thanks for registering with us.
+    find your account details below:
+      AccountNumber:${generatedAcc}
+    `
+    );
+    return;
   }),
   errorMW
 );
@@ -65,11 +94,17 @@ router.post(
   loginMW,
   tryCatchMW(async (req, res) => {
     const response = await authController(req.body);
+    if (response === "User not found")
+      return res.status(404).send("it seems like,you dont have account with us !");
+
     if (!response || !response.user) return res.status(404).send("invalid user name or password");
 
-    const { user, token } = response;
+    const { user, token, accountDetails } = response;
 
-    res.header("x-auth-token", token).status(200).json({ message: "login successful", user });
+    res
+      .header("x-auth-token", token)
+      .status(200)
+      .json({ message: "login successful", user, accountDetails });
 
     req.user = user;
 
@@ -78,58 +113,103 @@ router.post(
   errorMW
 );
 
-//forgot password route
-router
-  .post(
-    "/resetPassword",
-    tryCatchMW(async (req, res) => {
-      const user = userModel.find({ email: req.body.email });
-      if (!user) return res.status(400).send("no account with such email");
+// Route: Request OTP
+router.post(
+  "/resetPassword",
+  tryCatchMW(async (req, res) => {
+    const { email } = req.body;
 
-      //if found,send otp
-      const infor = await sendEmail(user.email, "OTP", require("../mailService/message.html"));
-      if (!infor) return res.status(400).send("error sending otp");
+    if (!email) return res.status(400).send("Email is required");
 
-      res.status(200).send("otp sent successfully");
-    }),
-    errorMW
-  )
-  .post(
-    "/verifyOTP",
-    tryCatchMW(async (req, res) => {
-      const { email, otp } = req.body;
-      const user = await userModel.findOne({ email });
-      if (!user) return res.status(400).send("error verifying otp");
-      if (OTP !== otp) return res.status(400).send("invalid otp");
+    const user = await userModel.findOne({ email });
 
-      req.user = { email: user.email, otp };
-      return;
-    }),
-    errorMW
-  )
-  .post(
-    "/update-password",
-    tryCatchMW(async (req, res) => {
-      if (!req.user.otp) return res.status(401).send("unauthorized, apply for authentication");
+    if (!user) return res.status(404).send("No account with such email");
 
-      const { password } = req.body;
+    const otp = OTPgen(6);
+    const otpExpiration = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
 
-      const schema = Joi.object({
-        password: Joi.string()
-          .min(8)
-          .required()
-          .regex(/^[A-Z] /),
-      }).validate(password);
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
 
-      if (schema.error) return res.status(400).send(error.message);
+    await user.save();
 
-      await userModel.findAndUpdate({ email: req.user.email }, { password: password });
+    try {
+      await sendEmail(user.email, "OTP for Password Reset", `Your OTP: ${otp}`);
+      return res.status(200).send("OTP sent successfully");
+    } catch (err) {
+      console.error("Error sending email:", err.message);
+      return res.status(500).send("Error sending OTP");
+    }
+  }),
+  errorMW
+);
 
-      sendEmail(req.user.email, "PASSWORD CHANGED", require("../mailService/PasswordMsg.html"));
+// Route: Verify OTP
+router.post(
+  "/verifyOTP",
+  tryCatchMW(async (req, res) => {
+    const { email, otp } = req.body;
 
-      return res.status(200).send("password changed successfully");
-    }),
-    errorMW
-  );
+    if (!email || !otp) return res.status(400).send("Invalid request");
+
+    const user = await userModel.findOne({ email });
+    console.log("user otp:", user.otp);
+    console.log("sent otp:", otp);
+
+    if (!user) return res.status(400).send("no such a user");
+
+    if (user.otpExpiration < Date.now()) return res.status(400).send(" expired OTP");
+
+    if (parseInt(user?.otp) !== parseInt(otp)) return res.status(400).send("invalid otp");
+
+    // OTP verified, proceed
+    user.otp = null;
+    user.otpExpiration = null;
+    user.otpCert = tokenGen({ otp }, process.env.secretKey, "5min");
+    await user.save();
+
+    return res.status(200).send("OTP verified successfully");
+  }),
+  errorMW
+);
+
+// Route: Update Password
+router.put(
+  "/update-password",
+  updatePasswordMW,
+  tryCatchMW(async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) return res.status(400).send("Invalid request");
+
+    const schema = Joi.string().min(8).required();
+
+    const { error } = schema.validate(password);
+    if (error) return res.status(400).send(error.details[0].message);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await userModel.findOneAndUpdate(
+      { email },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).send("No user found");
+
+    try {
+      await sendEmail(
+        user.email,
+        "Password Changed",
+        "Your password has been updated successfully."
+      );
+      return res.status(200).send("Password changed successfully");
+    } catch (err) {
+      console.error("Error sending email:", err.message);
+      return res.status(500).send("Error notifying user about password change");
+    }
+  }),
+  errorMW
+);
 
 module.exports = router;
