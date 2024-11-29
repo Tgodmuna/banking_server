@@ -7,8 +7,6 @@ const tokenGen = require("../utils/tokenGen");
 async function authController(body) {
   const userData = _.pick(body, ["email", "password"]);
 
-  // Log the input data for debugging
-  console.log("Attempting to authenticate:", userData);
 
   let user = await User.findOne({ email: userData.email }).select('-createdAt -updatedAt -deleteAccount')
 
@@ -32,7 +30,7 @@ async function authController(body) {
     _.pick(user, ["name", "email", "gender", "dateOfBirth", "address", "_id"]),
     // @ts-ignore
     process.env.secretKey,
-    "30min"
+    "20min"
   );
 
   console.log("Authentication successful");
