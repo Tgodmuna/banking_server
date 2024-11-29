@@ -8,7 +8,7 @@ module.exports = function authorisationMW(req, res, next) {
     const validToken = jwt.verify(token, process.env.secretKey);
 
     if (!validToken) return res.status(401).send("invalid token");
-
+    req.user = jwt.decode(token);
     next();
   } catch (err) {
     console.log(err);
