@@ -1,22 +1,24 @@
-const { valid } = require("joi");
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const transactionSchema = new Schema(
   {
-    transactionId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     senderAccount: {
-      type: Schema.Types.ObjectId,
-      ref: "Account",
-      required: true,
+      type: Number,
+      validate: {
+        validator: function (value) {
+          // Require senderAccount only if transactionType is "transfer"
+          // @ts-ignore
+          if (this.transactionType === "transfer") {
+            return value !== undefined && value !== null;
+          }
+          return true;
+        },
+        message: "Sender account is required for transfer transactions",
+      },
     },
     recipientAccount: {
-      type: Schema.Types.ObjectId,
-      ref: "Account",
+      type: Number,
       required: true,
     },
     amount: {
@@ -27,6 +29,7 @@ const transactionSchema = new Schema(
         validator: function (value) {
           return value > 0;
         },
+        message: "Amount must be greater than zero",
       },
     },
     transactionType: {
