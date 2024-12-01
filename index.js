@@ -1,7 +1,8 @@
 // @ts-nocheck
-require("dotenv").config('./.env');
+require("dotenv").config("./.env");
 const express = require("express");
 const connectDB = require("./src/DBconfig/connect");
+const logger = require("./src/utils/logger");
 const config = require("config");
 const userRoutes = require("./src/routes/userRoutes");
 const profileRoutes = require("./src/routes/profileRoutes");
@@ -13,7 +14,7 @@ connectDB();
 //automatically shutdown the app
 
 if (!process.env.secretKey) {
-  console.error("FATAL ERROR: secretKey is not defined.");
+  logger.error("FATAL ERROR: secretKey is not defined.");
   process.exit(1);
 }
 
@@ -29,5 +30,5 @@ const PORT = config.get("PORT") || 3000;
 // console.log(config.get(PORT));
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
