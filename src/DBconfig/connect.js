@@ -1,15 +1,15 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
-
+const logger = require("../utils/logger");
 const connectDB = async () => {
-  console.log(process.env.MONGO_URL);
   try {
     await mongoose.connect(`${process.env.MONGO_URL}`, {
       serverSelectionTimeoutMS: 30000,
     });
-    console.log("MongoDB connected...");
+    logger.info("DataBase connected succesfullby");
   } catch (err) {
-    console.error(err.message);
+    logger.error(err.message);
+    logger.error("DB conection closed......");
     process.exit(1);
   }
 };
