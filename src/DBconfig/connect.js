@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-require("dotenv").config();
 const logger = require("../utils/logger");
 const connectDB = async () => {
   try {
