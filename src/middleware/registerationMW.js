@@ -1,5 +1,5 @@
 const Joi = require("joi");
-
+const logger = require("../utils/logger");
 /**
  * Middleware function that validates the registration data in the request body.
  * If the data is valid, it calls the next middleware function. If the data is
@@ -10,12 +10,19 @@ const Joi = require("joi");
  * @param {Function} next - The next middleware function.
  */
 module.exports = (req, res, next) => {
+  logger.info("inside validateRegisterationMW..... ");
+  logger.info("attempting to validate user data...");
+
   const { error } = validateRegistrationData(req.body);
 
   if (error) {
     next(error);
+
+    logger.error("failed validating user", error);
     // return res.status(400).json({ error: error.details[0].message });
   }
+
+  logger.info("done validating user data...");
 
   next();
 };
