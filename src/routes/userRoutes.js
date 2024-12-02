@@ -27,8 +27,7 @@ const { hash } = require("crypto");
 const { send } = require("process");
 const { post, put } = require("./profileRoutes");
 const updatePasswordMW = require("../middleware/update-passwordMW");
-
-// import OTP from "../mailService/message.html";
+const logger = require("../utils/logger");
 
 //register user
 router.post(
@@ -37,10 +36,19 @@ router.post(
   tryCatchMW(async (req, res) => {
     const user = await registerUser(req.body);
 
-    if (!user) return res.status(501).send("error creating a user");
+    if (!user) {
+      logger.error("error registering user");
+      logger.info("failed to register user ...", user);
+      res.status(501).send("error creating a user");
+      return;
+    }
+    logger.info("finished registering user ");
+    logger.info("attempting account number generating........");
 
     const generatedAcc = AccountGen();
+    logger.info("finished generating account number !");
 
+    logger.info("attempting to create account for the registered user....");
     //create account for the new user
     const account = await new Account({
       accountNumber: generatedAcc,
@@ -48,6 +56,9 @@ router.post(
       balance: 0,
       isActive: true,
     }).save();
+
+    if (!account) logger.info("failed creating account for the user");
+    logger.info("done creating account !");
 
     const token = tokenGen(_.pick(user, ["name", "email", "_id"]), process.env.secretKey, "2h");
 
@@ -135,9 +146,10 @@ router.post(
 
     try {
       await sendEmail(user.email, "OTP for Password Reset", `Your OTP: ${otp}`);
+      logger.info("OTP send succesfully");
       return res.status(200).send("OTP sent successfully");
     } catch (err) {
-      console.error("Error sending email:", err.message);
+      logger.error("Error sending email:", err.message);
       return res.status(500).send("Error sending OTP");
     }
   }),
@@ -153,21 +165,21 @@ router.post(
     if (!email || !otp) return res.status(400).send("Invalid request");
 
     const user = await userModel.findOne({ email });
-    console.log("user otp:", user.otp);
-    console.log("sent otp:", otp);
+    logger.info("found user to verify-OTP on");
 
     if (!user) return res.status(400).send("no such a user");
 
     if (user.otpExpiration < Date.now()) return res.status(400).send(" expired OTP");
 
     if (parseInt(user?.otp) !== parseInt(otp)) return res.status(400).send("invalid otp");
-
+    logger.infor("otp verified");
+    logger.infor("attempting to erase the OTP,otpExpiration,otpCert.....");
     // OTP verified, proceed
     user.otp = null;
     user.otpExpiration = null;
     user.otpCert = tokenGen({ otp }, process.env.secretKey, "5min");
     await user.save();
-
+    logger.info("finally erased");
     return res.status(200).send("OTP verified successfully");
   }),
   errorMW
@@ -203,9 +215,10 @@ router.put(
         "Password Changed",
         "Your password has been updated successfully."
       );
+      logger.info("changed password");
       return res.status(200).send("Password changed successfully");
     } catch (err) {
-      console.error("Error sending email:", err.message);
+      logger.error("Error sending email:", err.message);
       return res.status(500).send("Error notifying user about password change");
     }
   }),
