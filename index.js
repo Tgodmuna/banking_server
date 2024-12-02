@@ -7,7 +7,6 @@ const config = require("config");
 const userRoutes = require("./src/routes/userRoutes");
 const profileRoutes = require("./src/routes/profileRoutes");
 const bankingRoutes = require("./src/routes/bankingRoutes");
-
 const app = express();
 connectDB();
 //if no secret key for  token generation is found,
@@ -17,17 +16,23 @@ if (!process.env.secretKey) {
   logger.error("FATAL ERROR: secretKey is not defined.");
   process.exit(1);
 }
+//handling uncaught exception
+process.on("uncaughtExceptions", (ex) => {
+  logger.error("caught an uncaughtExceptions,", ex.message);
+  process.exit(1);
+});
 
+//handling unhandled exceptions
+process.on("unhandledRejection", (ex) => {
+  logger.error("unhandled rejection", ex.message, ex);
+  process.exit(1);
+});
 app.use(express.json());
 app.use("/api/user/", [userRoutes]);
 app.use("/api/profile", [profileRoutes]);
 app.use("/api/transactions", bankingRoutes);
 
 const PORT = config.get("PORT") || 3000;
-
-// console.log(config.get(JWTSecret));
-// console.log(config.get(MONGO_URL));
-// console.log(config.get(PORT));
 
 app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
