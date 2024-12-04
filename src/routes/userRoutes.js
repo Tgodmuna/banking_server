@@ -22,12 +22,10 @@ const Account = require("../models/accountModel");
 const tokenGen = require("../utils/tokenGen");
 const { AccountGen } = require("../utils/AccountGen");
 const bcrypt = require("bcryptjs/dist/bcrypt");
-const { error } = require("console");
-const { hash } = require("crypto");
-const { send } = require("process");
-const { post, put } = require("./profileRoutes");
 const updatePasswordMW = require("../middleware/update-passwordMW");
 const logger = require("../utils/logger");
+const ejs = require("ejs");
+const path = require("path");
 
 //register user
 router.post(
@@ -145,8 +143,21 @@ router.post(
     await user.save();
 
     try {
-      await sendEmail(user.email, "OTP for Password Reset", `Your OTP: ${otp}`);
-      logger.info("OTP send succesfully");
+      ejs.renderFile(
+        path.join(__dirname, "../views/Otpmessage.ejs"),
+        { user: user.name, otp: otp },
+        async (err, html) => {
+          if (err) {
+            console.log("error sending mail", err);
+            return;
+          }
+
+          await sendEmail(user.email, "OTP for Password Reset", html);
+
+          logger.info("OTP send succesfully");
+        }
+      );
+
       return res.status(200).send("OTP sent successfully");
     } catch (err) {
       logger.error("Error sending email:", err.message);
@@ -172,8 +183,8 @@ router.post(
     if (user.otpExpiration < Date.now()) return res.status(400).send(" expired OTP");
 
     if (parseInt(user?.otp) !== parseInt(otp)) return res.status(400).send("invalid otp");
-    logger.infor("otp verified");
-    logger.infor("attempting to erase the OTP,otpExpiration,otpCert.....");
+    logger.info("otp verified");
+    logger.info("attempting to erase the OTP,otpExpiration,otpCert.....");
     // OTP verified, proceed
     user.otp = null;
     user.otpExpiration = null;
@@ -210,12 +221,18 @@ router.put(
     if (!user) return res.status(404).send("No user found");
 
     try {
-      await sendEmail(
-        user.email,
-        "Password Changed",
-        "Your password has been updated successfully."
+      ejs.renderFile(
+        path.join(__dirname, "../views/PasswordMsg.ejs"),
+        { user: user.name },
+        async (err, html) => {
+          if (err) {
+            console.log("error sending acknowledgment mail", err);
+            retun;
+          }
+          await sendEmail(user.email, "Password Changed", html);
+          logger.info("changed password");
+        }
       );
-      logger.info("changed password");
       return res.status(200).send("Password changed successfully");
     } catch (err) {
       logger.error("Error sending email:", err.message);
