@@ -6,7 +6,7 @@ module.exports = async function sendEmail(to, subject, message) {
     from: "tgodmuna@yahoo.com",
     to: to,
     subject: subject,
-    text: message,
+    html: message,
     priority: "high",
   });
 };
