@@ -31,6 +31,8 @@ app.use(express.json());
 app.use("/api/user/", [userRoutes]);
 app.use("/api/profile", [profileRoutes]);
 app.use("/api/transactions", bankingRoutes);
+app.set("view engine", "ejs");
+app.set("views", "./src/views/");
 
 const PORT = config.get("PORT") || 3000;
 
