@@ -9,9 +9,9 @@ const profileRoutes = require("./src/routes/profileRoutes");
 const bankingRoutes = require("./src/routes/bankingRoutes");
 const app = express();
 connectDB();
+
 //if no secret key for  token generation is found,
 //automatically shutdown the app
-
 if (!process.env.secretKey) {
   logger.error("FATAL ERROR: secretKey is not defined.");
   process.exit(1);
