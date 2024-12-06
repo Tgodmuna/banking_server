@@ -80,6 +80,8 @@ banking-server-system/
 │   ├── config/             # Configuration files for environment variables, Redis, etc.
 │   ├── logs/               # Winston log files
 │   └── app.js              # Application entry point
+│   └── views              # ejs files
+
 ├── .env                    # Environment variables
 ├── .gitignore              # Git ignore file
 ├── ./upload              # Directory for uploaded files (e.g., profile pictures)
@@ -133,19 +135,25 @@ banking-server-system/
 - `POST /api/auth/register`: Register a new user.
 - `POST /api/auth/login`: Login and retrieve a JWT token.
 - `POST /api/auth/logout`: Logout a user.
-- `POST /api/auth/forgot-password`: Request password reset.
+- `POST /api/auth/resetPassword`: Request password reset.
+- `POST /api/auth/verifyOTP`: verify OTP.
+- `POST /api/auth/update-password`: reset password.
+
+
 
 ### **User Operations**
 
 - `GET /api/users/me`: Fetch logged-in user profile.
 - `PUT /api/users/me`: Update profile information.
 - `POST /api/users/me/upload-pic`: Upload a profile picture.
+- `GET /api/users/profilePic`: Fetch logged-in user profile pic.
+
 
 ### **Account Operations**
 
-- `POST /api/accounts`: Create a new account.
-- `GET /api/accounts/:id`: Fetch account details by ID.
-- `PUT /api/accounts/:id`: Update account details.
+- `GET /api/user/view-me`: view profile.
+- `POST /api/user/update`: Update account details.
+- `POST /api/user/upoad`: upload profile.
 - `DELETE /api/accounts/:id`: Close an account.
 
 ### **Transaction Operations**
@@ -153,6 +161,7 @@ banking-server-system/
 - `POST /api/transactions/deposit`: Deposit money into an account.
 - `POST /api/transactions/withdraw`: Withdraw money from an account.
 - `POST /api/transactions/transfer`: Transfer funds between accounts.
+- `POST /api/transactions/account-details`: view account-details.
 - `GET /api/transactions/history/:id`: Fetch account transaction history.
 
 ---
