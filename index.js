@@ -28,8 +28,8 @@ process.on("unhandledRejection", (ex) => {
   process.exit(1);
 });
 app.use(express.json());
-app.use("/api/user/", [userRoutes]);
-app.use("/api/profile", [profileRoutes]);
+app.use("/api/auth/", [userRoutes]);
+app.use("/api/users/", [profileRoutes]);
 app.use("/api/transactions", bankingRoutes);
 app.set("view engine", "ejs");
 app.set("views", "./src/views/");
